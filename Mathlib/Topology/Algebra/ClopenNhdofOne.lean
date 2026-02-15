@@ -20,6 +20,10 @@ there exists an open normal subgroup contained within it.
 We then apply this lemma to show `ProfiniteGrp.closedSubgroup_eq_sInf_open`:
 any closed subgroup of a profinite group is the intersection of the open subgroups containing it.
 
+Furthermore, we have `ProfiniteGrp.closedSubgroup_eq_sInf_open_normal_of_normal`:
+any closed normal subgroup of a profinite group is the intersection of the open normal subgroups
+containing it.
+
 This file is split out from the file `OpenSubgroup` because it needs more imports.
 -/
 
@@ -78,5 +82,34 @@ theorem closedSubgroup_eq_sInf_open (H : ClosedSubgroup G) :
       exact hN (hyz ▸ hy) <| mem_leftCoset g (inv_mem_iff.mpr hz)
     exact hg_not' <|
       Subgroup.mem_sInf.mp hg _ ⟨Subgroup.isOpen_mono le_sup_left N.isOpen, le_sup_right⟩
+
+open scoped Pointwise in
+/--
+Any closed normal subgroup of a profinite group is the intersection of the open normal subgroups
+containing it.
+-/
+theorem closedSubgroup_eq_sInf_open_normal_of_normal (H : ClosedSubgroup G) [H.Normal] :
+    H = sInf {N : Subgroup G | IsOpen (N : Set G) ∧ N.Normal ∧ H ≤ N} := by
+  apply le_antisymm
+  · exact le_sInf fun N hN ↦ hN.2.2
+  · intro g hg
+    by_contra hg_not
+    let U : Set G := (g • H)ᶜ
+    have UOpen : IsOpen U :=
+      ((Homeomorph.mulLeft g).isClosedMap _ H.isClosed').isOpen_compl
+    have einU : 1 ∈ U := by
+      refine Set.mem_compl (fun ⟨l, hl, (hgl : g * l = 1)⟩ ↦ ?_)
+      rw [← inv_eq_iff_mul_eq_one] at hgl
+      exact hg_not <| inv_mem_iff.mp (hgl ▸ hl)
+    obtain ⟨N, hN⟩ := exist_openNormalSubgroup_sub_open_nhds_of_one UOpen einU
+    let NH : Subgroup G := N ⊔ H
+    have hg_not' : g ∉ NH := by
+      by_contra hg'
+      rcases Subgroup.mem_sup_of_normal_left.mp hg' with ⟨y, hy, z, hz, hyz⟩
+      rw [← eq_mul_inv_iff_mul_eq] at hyz
+      exact hN (hyz ▸ hy) <| mem_leftCoset g (inv_mem_iff.mpr hz)
+    exact hg_not' <|
+      Subgroup.mem_sInf.mp hg _
+      ⟨Subgroup.isOpen_mono le_sup_left N.isOpen, inferInstance, le_sup_right⟩
 
 end ProfiniteGrp
